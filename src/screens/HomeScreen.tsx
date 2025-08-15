@@ -1,21 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-export default function HomeScreen() {
+export default function HomeScreen({ onNewResume, onViewSaved }: { onNewResume?: () => void; onViewSaved?: () => void }) {
   return (
     <View style={styles.container}>
       <Image source={require('../assets/icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>JobDeck</Text>
       <Text style={styles.subtitle}>Crie, edite e exporte seu currículo</Text>
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9}>
+        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9} onPress={onNewResume}>
           <Text style={styles.primaryButtonText}>Novo currículo</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.8}>
           <Text style={styles.secondaryButtonText}>Escolher template</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.linkButton} activeOpacity={0.6}>
-          <Text style={styles.linkButtonText}>Importar currículo</Text>
+        <TouchableOpacity style={styles.linkButton} activeOpacity={0.6} onPress={onViewSaved}>
+          <Text style={styles.linkButtonText}>Ver currículos salvos</Text>
         </TouchableOpacity>
       </View>
     </View>

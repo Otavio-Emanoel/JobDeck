@@ -5,6 +5,7 @@ export interface PersonalInfo {
   location?: string;
   website?: string;
   summary?: string;
+  avatarUri?: string;
 }
 
 export interface Experience {
