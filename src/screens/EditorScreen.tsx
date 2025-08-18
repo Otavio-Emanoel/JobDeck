@@ -21,6 +21,7 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
   const [education, setEducation] = useState('');
   const [experience, setExperience] = useState('');
   const [languages, setLanguages] = useState('');
+  const [skills, setSkills] = useState('');
   const [successModal, setSuccessModal] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const [positions, setPositions] = useState<Record<string, number>>({});
@@ -76,6 +77,7 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
       const dobTxt = sum.includes('Nascimento:') ? sum.replace('Nascimento:', '').trim() : '';
       setDob(dobTxt);
       setLanguages((r.languages || []).join(', '));
+      setSkills((r.skills || []).map((s: any) => s?.name).filter(Boolean).join(', '));
 
       const parsed = parseLocation(r.personal.location);
       setStreet(parsed.street);
@@ -136,6 +138,7 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
       return;
     }
     const langs = languages.split(',').map(s => s.trim()).filter(Boolean);
+    const skillsArr = skills.split(',').map(s => s.trim()).filter(Boolean).map(n => ({ name: n }));
     const locParts = [] as string[];
     if (street.trim()) locParts.push(street.trim() + (number.trim() ? `, ${number.trim()}` : ''));
     if (neighborhood.trim()) locParts.push(neighborhood.trim());
@@ -156,7 +159,7 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
       experiences: experience.trim()
         ? [{ id: (Date.now() + 1).toString(), company: experience.trim(), role: '', startDate: '', endDate: '', description: '' }]
         : [],
-      skills: [],
+      skills: skillsArr,
       languages: langs.length ? langs : undefined,
       certifications: [],
     };
@@ -235,6 +238,11 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
           <Text style={styles.section}>Experiência profissional</Text>
           <View style={styles.field} onLayout={onLayoutField('experience')}>
             <TextInput style={[styles.input, styles.multiline]} value={experience} onChangeText={setExperience} onFocus={() => scrollTo('experience')} placeholder="Empresa, cargo, atividades, período" placeholderTextColor="#9CA3AF" multiline />
+          </View>
+
+          <Text style={styles.section}>Habilidades</Text>
+          <View style={styles.field} onLayout={onLayoutField('skills')}>
+            <TextInput style={styles.input} value={skills} onChangeText={setSkills} onFocus={() => scrollTo('skills')} placeholder="Ex.: React, Comunicação, Trabalho em equipe" placeholderTextColor="#9CA3AF" />
           </View>
 
           <Text style={styles.section}>Proficiência linguística</Text>

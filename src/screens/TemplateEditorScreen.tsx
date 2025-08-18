@@ -42,6 +42,8 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
   const printRef = useRef<View | null>(null); // view separada para export de imagem (sem TextInput)
   const [canvasWidth, setCanvasWidth] = useState(0); // largura total da página
   const [contentWidth, setContentWidth] = useState(0); // largura da área de conteúdo (onde ficam os blocos)
+  const [printSize, setPrintSize] = useState({ width: 0, height: 0 });
+  const [previewSize, setPreviewSize] = useState({ width: 0, height: 0 });
 
   // Converte TemplateDoc.nodes -> blocks do editor
   const initialBlocks: TemplateBlock[] = useMemo(() => {
@@ -104,23 +106,39 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
     ]);
   }
 
+  // Limita o movimento das imagens para não sair da área de conteúdo
+  // Fator para suavizar o movimento (quanto maior, mais lento)
+  const DRAG_SENSITIVITY = 10;
+  const RESIZE_SENSITIVITY = 5;
+
   function onDrag(id: string, dx: number, dy: number) {
     setBlocks((b) =>
-      b.map((blk) =>
-        blk.id === id && blk.type === 'image'
-          ? { ...blk, x: Math.max(0, blk.x + dx), y: Math.max(0, blk.y + dy) }
-          : blk
-      )
+      b.map((blk) => {
+        if (blk.id === id && blk.type === 'image') {
+          const maxW = contentWidth || canvasWidth || 740;
+          const maxH = 980;
+          // Permite y negativo para posicionar no topo
+          const newX = Math.max(0, Math.min(blk.x + dx / DRAG_SENSITIVITY, maxW - blk.w));
+          const newY = Math.max(-80, Math.min(blk.y + dy / DRAG_SENSITIVITY, maxH - blk.h));
+          return { ...blk, x: newX, y: newY };
+        }
+        return blk;
+      })
     );
   }
 
   function onResize(id: string, dw: number, dh: number) {
     setBlocks((b) =>
-      b.map((blk) =>
-        blk.id === id && blk.type === 'image'
-          ? { ...blk, w: Math.max(40, blk.w + dw), h: Math.max(40, blk.h + dh) }
-          : blk
-      )
+      b.map((blk) => {
+        if (blk.id === id && blk.type === 'image') {
+          const maxW = contentWidth || canvasWidth || 740;
+          const maxH = 980;
+          const newW = Math.max(40, Math.min(blk.w + dw / RESIZE_SENSITIVITY, maxW - blk.x));
+          const newH = Math.max(40, Math.min(blk.h + dh / RESIZE_SENSITIVITY, maxH - blk.y));
+          return { ...blk, w: newW, h: newH };
+        }
+        return blk;
+      })
     );
   }
 
@@ -171,6 +189,7 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
         format,
         quality: 1,
         result: 'tmpfile',
+        backgroundColor: '#FFFFFF',
       } as any);
       await shareFile(String(uri));
     } catch (e) {
@@ -195,6 +214,32 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
 
   // Calcular paddings para barra superior com área segura
   const topInset = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+
+  // Altura mínima dinâmica para acomodar imagens posicionadas absolutas (evita corte)
+  const headerHeight = useMemo(() => {
+    const id = templateId as TemplateId;
+    if (id === 'classic') return 96; // header em cima
+    return 0; // modern tem sidebar; minimal sem header
+  }, [templateId]);
+
+  const imagesBottom = useMemo(() => {
+    let maxY = 0;
+    for (const b of blocks) {
+      if ((b as any).type === 'image') {
+        const top = (b as any).y || 0;
+        const h = (b as any).h || 0;
+        maxY = Math.max(maxY, top + h);
+      }
+    }
+    return maxY;
+  }, [blocks]);
+
+  const dynamicMinHeight = useMemo(() => {
+    // padding vertical do contentContainer geralmente 16 em classic/modern
+    const contentPadding = 32;
+    const base = 980; // altura base A4 útil
+    return Math.max(base, headerHeight + imagesBottom + contentPadding);
+  }, [headerHeight, imagesBottom]);
 
   return (
     <View style={styles.container}>
@@ -233,7 +278,7 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} removeClippedSubviews={false}>
         <View
           style={[styles.page, { backgroundColor: theme.pageBg }]}
           onLayout={(e) => setCanvasWidth(e.nativeEvent.layout.width)}
@@ -242,33 +287,24 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
           {/* PREVIEW visível (editável) */}
           <View
             ref={previewRef as any}
-            style={[styles.card, theme.card]}
+            style={[styles.card, theme.card, { minHeight: dynamicMinHeight }]}
             collapsable={false}
+            onLayout={(e) => setPrintSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
           >
             {theme.header}
             <View style={theme.contentContainer} onLayout={(e) => setContentWidth(e.nativeEvent.layout.width)}>
               {blocks.map((blk) => {
                 if (blk.type === 'image') {
                   return (
-                    <DraggableImage
-                      key={blk.id}
-                      block={blk}
-                      onDrag={onDrag}
-                      onResize={onResize}
-                    />
+                    <DraggableImage key={blk.id} block={blk} onDrag={onDrag} onResize={onResize} />
                   );
                 }
                 return (
                   <TextInput
                     key={blk.id}
-                    style={[
-                      styles.input,
-                      blk.type === 'h1' ? theme.h1 : blk.type === 'h2' ? theme.h2 : theme.p,
-                    ]}
+                    style={[styles.input, blk.type === 'h1' ? theme.h1 : blk.type === 'h2' ? theme.h2 : theme.p]}
                     value={blk.text}
-                    onChangeText={(t) =>
-                      setBlocks((b) => b.map((x) => (x.id === blk.id && x.type !== 'image' ? { ...x, text: t } : x)))
-                    }
+                    onChangeText={(t) => setBlocks((b) => b.map((x) => (x.id === blk.id && x.type !== 'image' ? { ...x, text: t } : x)))}
                     multiline
                     placeholder={blk.type.startsWith('h') ? 'Título' : 'Texto'}
                   />
@@ -277,34 +313,26 @@ export default function TemplateEditorScreen({ templateId, onBack, onSaved, edit
             </View>
           </View>
 
-          {/* VIEW DE IMPRESSÃO (invisível) para PNG/JPEG: usa Text no lugar de TextInput */}
+          {/* VIEW DE IMPRESSÃO (no fluxo e invisível) para PNG/JPEG: usa Text no lugar de TextInput */}
           <View
             ref={printRef as any}
-            style={[styles.card, theme.card, { position: 'absolute', left: 0, top: 0, opacity: 0.01 }]}
+            style={[styles.card, theme.card, { opacity: 0.01, minHeight: dynamicMinHeight }]} // invisível, mas com mesmo layout e altura
             collapsable={false}
             pointerEvents="none"
+            onLayout={(e) => setPrintSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
           >
             {theme.header}
             <View style={theme.contentContainer}>
               {blocks.map((blk) => {
                 if (blk.type === 'image') {
                   return (
-                    <View
-                      key={blk.id}
-                      style={[styles.abs, { left: blk.x, top: blk.y, width: blk.w, height: blk.h }]}
-                    >
+                    <View key={blk.id} style={[styles.abs, { left: blk.x, top: blk.y, width: blk.w, height: blk.h }]}>
                       <Image source={{ uri: blk.uri }} style={{ width: '100%', height: '100%', borderRadius: 6 }} />
                     </View>
                   );
                 }
                 return (
-                  <Text
-                    key={blk.id}
-                    style={[
-                      styles.input,
-                      blk.type === 'h1' ? theme.h1 : blk.type === 'h2' ? theme.h2 : theme.p,
-                    ]}
-                  >
+                  <Text key={blk.id} style={[styles.input, blk.type === 'h1' ? theme.h1 : blk.type === 'h2' ? theme.h2 : theme.p]}>
                     {blk.text}
                   </Text>
                 );

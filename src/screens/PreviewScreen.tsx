@@ -100,6 +100,12 @@ export default function PreviewScreen({ id, onBack }: Props) {
               ) : (
                 <Text style={styles.itemMeta}>Sem habilidades informadas.</Text>
               )}
+              {r.languages && r.languages.length ? (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={styles.sectionTitle}>IDIOMAS</Text>
+                  <Text style={styles.paragraph}>{r.languages.join(', ')}</Text>
+                </View>
+              ) : null}
             </View>
           </View>
         ) : (
