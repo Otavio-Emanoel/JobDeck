@@ -44,17 +44,72 @@ export default function SavedResumesScreen({ onBack, onPreview, onEdit }: Props)
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF', padding: 16, paddingBottom: 24 },
-  title: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 12, textAlign: 'center' },
-  card: { padding: 14, borderRadius: 12, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  cardSubtitle: { marginTop: 4, color: '#6B7280' },
-  cardActions: { flexDirection: 'row', gap: 8 },
-  smallButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  smallButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  preview: { backgroundColor: '#6B7280' },
-  edit: { backgroundColor: '#2F80ED' },
-  empty: { color: '#6B7280' },
-  backButton: { marginTop: 12, backgroundColor: '#2F80ED', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  backButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#FFFFFF', 
+    padding: 16, 
+    paddingBottom: 24 
+  },
+  title: { 
+    fontSize: 22, 
+    fontWeight: '700', 
+    color: '#111827', 
+    marginBottom: 12, 
+    textAlign: 'center' 
+  },
+  card: { 
+    padding: 14, 
+    borderRadius: 12, 
+    backgroundColor: '#F9FAFB', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    marginBottom: 12, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 12 
+  },
+  cardTitle: { 
+    fontSize: 16, 
+    fontWeight: '700', 
+    color: '#111827' 
+  },
+  cardSubtitle: { 
+    marginTop: 4, 
+    color: '#6B7280' 
+  },
+  cardActions: { 
+    flexDirection: 'row', 
+    gap: 8 
+  },
+  smallButton: { 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 8 
+  },
+  smallButtonText: { 
+    color: '#FFFFFF', 
+    fontSize: 13, 
+    fontWeight: '700' 
+  },
+  preview: { 
+    backgroundColor: '#6B7280' 
+  },
+  edit: { 
+    backgroundColor: '#2F80ED' 
+  },
+  empty: { 
+    color: '#6B7280' 
+  },
+  backButton: { 
+    marginTop: 12, 
+    backgroundColor: '#2F80ED', 
+    paddingVertical: 12, 
+    borderRadius: 10, 
+    alignItems: 'center' 
+  },
+  backButtonText: { 
+    color: '#FFFFFF', 
+    fontSize: 16, 
+    fontWeight: '700' 
+  },
 });

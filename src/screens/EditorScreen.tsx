@@ -5,9 +5,9 @@ import { useResume } from '../contexts/ResumeProvider';
 import type { Resume } from '../types/resume';
 import { saveResume, getResume, updateResume } from '../services/storage';
 
-type Props = { onDone?: () => void; onViewSaved?: () => void; editingId?: string };
+type Props = { onDone?: () => void; onViewSaved?: () => void; editingId?: string; onBack?: () => void };
 
-export default function EditorScreen({ onDone, onViewSaved, editingId }: Props) {
+export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }: Props) {
   const { setResume } = useResume();
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [name, setName] = useState('');
@@ -132,6 +132,9 @@ export default function EditorScreen({ onDone, onViewSaved, editingId }: Props) 
     <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.select({ ios: 'padding', android: 'height' })} keyboardVerticalOffset={Platform.select({ ios: 64, android: 0 })}>
         <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentInsetAdjustmentBehavior="automatic">
+          <TouchableOpacity style={styles.backTop} onPress={onBack}>
+            <Text style={styles.backTopText}>Voltar</Text>
+          </TouchableOpacity>
           <Text style={styles.title}>{editingId ? 'Editar currículo' : 'Novo currículo'}</Text>
 
           <View style={styles.avatarWrapper} onLayout={onLayoutField('avatar')}>
@@ -224,31 +227,152 @@ export default function EditorScreen({ onDone, onViewSaved, editingId }: Props) 
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, paddingBottom: 240 },
-  title: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 10 },
-  section: { marginTop: 16, marginBottom: 8, fontSize: 16, fontWeight: '700', color: '#111827' },
-  field: { marginBottom: 12 },
-  label: { marginBottom: 6, color: '#374151', fontSize: 14, fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#111827', backgroundColor: '#F9FAFB' },
-  multiline: { minHeight: 112, textAlignVertical: 'top' },
-  row: { flexDirection: 'row', gap: 12 },
-  colSmall: { width: 92 },
-  colTiny: { width: 72 },
-  colMedium: { width: 140 },
-  colFlex: { flex: 1 },
-  saveButton: { marginTop: 12, backgroundColor: '#2F80ED', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
-  saveButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  avatarWrapper: { alignItems: 'center', marginBottom: 12 },
-  avatarButton: { width: 112, height: 112, borderRadius: 56, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  avatar: { width: '100%', height: '100%' },
-  avatarPlaceholder: { color: '#6366F1', fontSize: 12 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  modalCard: { width: '100%', maxWidth: 360, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#111827', textAlign: 'center' },
-  modalActions: { marginTop: 16, flexDirection: 'row', gap: 12 },
-  modalButton: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 10 },
-  modalPrimary: { backgroundColor: '#2F80ED' },
-  modalPrimaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  modalSecondary: { backgroundColor: '#F3F4F6' },
-  modalSecondaryText: { color: '#111827', fontSize: 15, fontWeight: '700' },
+  container: {
+    padding: 24,
+    paddingBottom: 240,
+  },
+  backTop: {
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  backTopText: {
+    color: '#111827',
+    fontWeight: '700',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 10,
+  },
+  section: {
+    marginTop: 16,
+    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  field: {
+    marginBottom: 12,
+  },
+  label: {
+    marginBottom: 6,
+    color: '#374151',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+    backgroundColor: '#F9FAFB',
+  },
+  multiline: {
+    minHeight: 112,
+    textAlignVertical: 'top',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  colSmall: {
+    width: 92,
+  },
+  colTiny: {
+    width: 72,
+  },
+  colMedium: {
+    width: 140,
+  },
+  colFlex: {
+    flex: 1,
+  },
+  saveButton: {
+    marginTop: 12,
+    backgroundColor: '#2F80ED',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  avatarWrapper: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatarButton: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarPlaceholder: {
+    color: '#6366F1',
+    fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  modalActions: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  modalPrimary: {
+    backgroundColor: '#2F80ED',
+  },
+  modalPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalSecondary: {
+    backgroundColor: '#F3F4F6',
+  },
+  modalSecondaryText: {
+    color: '#111827',
+    fontSize: 15,
+    fontWeight: '700',
+  },
 });
