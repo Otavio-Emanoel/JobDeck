@@ -1,4 +1,5 @@
 import type { Resume } from '../../types/resume';
+import type { TemplateDoc, TemplateNode } from '../../types/template';
 
 function escapeHtml(str: string) {
   return String(str ?? '')
@@ -24,7 +25,6 @@ async function toDataUri(uri?: string | null) {
   if (!uri) return null as string | null;
   try {
     const FS: any = await import('expo-file-system');
-    // Alguns provedores retornam content://; tenta ler direto, se falhar copia para cache
     async function read(path: string) {
       return await FS.readAsStringAsync(path, { encoding: 'base64' });
     }
@@ -32,7 +32,7 @@ async function toDataUri(uri?: string | null) {
     try {
       base64 = await read(uri);
     } catch {
-      const tmp = `${FS.cacheDirectory}avatar-${Date.now()}.jpg`;
+      const tmp = `${(FS as any).cacheDirectory}img-${Date.now()}.jpg`;
       try {
         await FS.copyAsync({ from: uri, to: tmp });
         base64 = await read(tmp);
@@ -45,6 +45,31 @@ async function toDataUri(uri?: string | null) {
   } catch {
     return null;
   }
+}
+
+function renderTemplateNodes(nodes: TemplateNode[], opts?: { scale?: number }) {
+  const s = opts?.scale ?? 1;
+  const flow: string[] = [];
+  const abs: string[] = [];
+  for (const n of nodes) {
+    if (n.type === 'title') {
+      flow.push(`<h2 style="margin:0 0 8px 0;font-size:22px;font-weight:800;color:#111827;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(n.text)}</h2>`);
+    } else if (n.type === 'paragraph') {
+      flow.push(`<p style="margin:0 0 10px 0;color:#111827;line-height:20px;font-size:14px;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(n.text)}</p>`);
+    } else if (n.type === 'image') {
+      const w = Math.max(24, Math.min(550, Math.round(n.width * s)));
+      const h = Math.max(24, Math.min(800, Math.round(n.height * s)));
+      const img = `<img src="${escapeHtml(n.uri)}" style="width:${w}px;height:${h}px;object-fit:cover;border-radius:6px;" />`;
+      if (typeof n.x === 'number' && typeof n.y === 'number') {
+        const x = Math.max(0, Math.round(n.x * s));
+        const y = Math.max(0, Math.round(n.y * s));
+        abs.push(`<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;">${img}</div>`);
+      } else {
+        flow.push(`<div style="margin:6px 0;">${img}</div>`);
+      }
+    }
+  }
+  return { flowHtml: flow.join(''), absoluteHtml: abs.join('') };
 }
 
 function generateHTML(resume: Resume, opts?: { avatarDataUri?: string }) {
@@ -173,4 +198,85 @@ export async function shareFile(uri: string) {
   if (available) {
     await Sharing.shareAsync(uri);
   }
+}
+
+export async function exportTemplateToPdf(doc: TemplateDoc, opts?: { canvasWidth?: number; targetWidth?: number }) {
+  // Converter imagens de nodes para data URI se forem file:// ou content://
+  const FS: any = await import('expo-file-system');
+  const nodes: TemplateNode[] = [];
+  for (const n of doc.nodes) {
+    if (n.type === 'image' && (n.uri.startsWith('file:') || n.uri.startsWith('content:'))) {
+      try {
+        const base64 = await FS.readAsStringAsync(n.uri, { encoding: 'base64' });
+        const mime = n.uri.endsWith('.png') ? 'image/png' : 'image/jpeg';
+        nodes.push({ ...n, uri: `data:${mime};base64,${base64}` });
+      } catch {
+        nodes.push(n);
+      }
+    } else {
+      nodes.push(n);
+    }
+  }
+
+  const targetWidth = opts?.targetWidth ?? 700; // largura útil dentro da página
+  const base = opts?.canvasWidth && opts.canvasWidth > 0 ? opts.canvasWidth : targetWidth;
+  const scale = targetWidth / base; // fator para converter posições do preview -> PDF
+
+  const { flowHtml, absoluteHtml } = renderTemplateNodes(nodes, { scale });
+
+  // Layouts diferentes por template
+  const id = (doc as any).templateId as string;
+  let bodyInner = '';
+  if (id === 'classic') {
+    bodyInner = `
+      <div class="card">
+        <div style="height:96px;background:#D1D5DB;"></div>
+        <div class="content" style="position:relative;padding:16px;">
+          ${flowHtml}
+          ${absoluteHtml}
+        </div>
+      </div>`;
+  } else if (id === 'modern') {
+    bodyInner = `
+      <div class="card" style="display:flex;flex-direction:row;">
+        <div style="width:160px;background:#DBEAFE;min-height:1000px;"></div>
+        <div class="content" style="position:relative;padding:16px;flex:1;">
+          ${flowHtml}
+          ${absoluteHtml}
+        </div>
+      </div>`;
+  } else {
+    // minimal
+    bodyInner = `
+      <div class="card">
+        <div class="content" style="position:relative;padding:16px;">
+          ${flowHtml}
+          ${absoluteHtml}
+        </div>
+      </div>`;
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<style>
+  @page { size: A4; margin: 24px; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color:#111827; margin:0; }
+  .page { width: ${targetWidth}px; margin: 24px auto; }
+  .card { position: relative; border:1px solid #E5E7EB; border-radius:12px; background:#FFFFFF; min-height: 1000px; width: 100%; overflow:hidden; }
+</style>
+</head>
+<body>
+  <div class="page">
+    ${bodyInner}
+  </div>
+</body>
+</html>`;
+
+  const { printToFileAsync } = await import('expo-print');
+  const file = await printToFileAsync({ html });
+  return file.uri as unknown as string;
 }

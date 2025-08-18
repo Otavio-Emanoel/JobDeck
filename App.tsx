@@ -9,19 +9,40 @@ import PreviewScreen from './src/screens/PreviewScreen';
 import TemplatePickerScreen from './src/screens/TemplatePickerScreen';
 import TemplateEditorScreen from './src/screens/TemplateEditorScreen';
 import { ResumeProvider } from './src/contexts/ResumeProvider';
+import { getResume, getTemplateDoc } from './src/services/storage';
+import type { TemplateDoc } from './src/types/template';
 
-type Route = 'home' | 'editor' | 'saved' | 'preview' | 'edit' | 'templates' | 'templateEditor';
+type Route = 'home' | 'editor' | 'saved' | 'preview' | 'edit' | 'templates' | 'template-editor';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [route, setRoute] = useState<Route>('home');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [templateEditingId, setTemplateEditingId] = useState<string | null>(null);
+  const [templateInitialDoc, setTemplateInitialDoc] = useState<TemplateDoc | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
+
+  async function handleEditTemplate(id: string) {
+    const item = await getTemplateDoc(id);
+    if (item && item.kind === 'template') {
+      setSelectedTemplate(item.template.templateId);
+      setTemplateInitialDoc(item.template);
+      setTemplateEditingId(id);
+      setRoute('template-editor');
+    }
+  }
+
+  function handlePickTemplate(id: string) {
+    setSelectedTemplate(id);
+    setTemplateEditingId(null);
+    setTemplateInitialDoc(null);
+    setRoute('template-editor');
+  }
 
   return (
     <ResumeProvider>
@@ -37,15 +58,32 @@ export default function App() {
             onBack={() => setRoute('home')}
             onPreview={(id) => { setSelectedId(id); setRoute('preview'); }}
             onEdit={(id) => { setSelectedId(id); setRoute('edit'); }}
+            onEditTemplate={handleEditTemplate}
           />
         ) : route === 'preview' && selectedId ? (
           <PreviewScreen id={selectedId} onBack={() => setRoute('saved')} />
         ) : route === 'edit' && selectedId ? (
           <EditorScreen onDone={() => setRoute('saved')} onViewSaved={() => setRoute('saved')} editingId={selectedId} onBack={() => setRoute('saved')} />
         ) : route === 'templates' ? (
-          <TemplatePickerScreen onBack={() => setRoute('home')} onPick={(tplId) => { setSelectedTemplate(tplId); setRoute('templateEditor'); }} />
-        ) : route === 'templateEditor' && selectedTemplate ? (
-          <TemplateEditorScreen templateId={selectedTemplate} onBack={() => setRoute('templates')} onSaved={() => setRoute('saved')} />
+          <TemplatePickerScreen onBack={() => setRoute('home')} onPick={handlePickTemplate} />
+        ) : route === 'template-editor' ? (
+          <TemplateEditorScreen
+            templateId={selectedTemplate || 'classic'}
+            editingId={templateEditingId || undefined}
+            initialDoc={templateInitialDoc || undefined}
+            onBack={() => {
+              setTemplateEditingId(null);
+              setTemplateInitialDoc(null);
+              setSelectedTemplate(null);
+              setRoute('home');
+            }}
+            onSaved={() => {
+              setTemplateEditingId(null);
+              setTemplateInitialDoc(null);
+              setSelectedTemplate(null);
+              setRoute('saved');
+            }}
+          />
         ) : (
           <HomeScreen onNewResume={() => setRoute('editor')} onViewSaved={() => setRoute('saved')} onPickTemplate={() => setRoute('templates')} />
         )}

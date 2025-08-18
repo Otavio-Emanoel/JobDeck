@@ -9,58 +9,16 @@ const TEMPLATES = [
   { id: 'minimal', name: 'Minimalista' },
 ];
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
-  title: { marginTop: 16, textAlign: 'center', fontSize: 20, fontWeight: '800', color: '#111827' },
-  card: { marginHorizontal: 16, marginBottom: 12, padding: 16, backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB' },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
-  cardHint: { marginTop: 8, color: '#6B7280' },
-  back: { position: 'absolute', left: 16, right: 16, bottom: 16, backgroundColor: '#2F80ED', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  previewBox: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 12 },
-  previewHeader: { height: 40, borderRadius: 6, marginBottom: 8 },
-  previewLineWide: { height: 10, backgroundColor: '#D1D5DB', borderRadius: 4, marginBottom: 6 },
-  previewLine: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 6 },
-  previewDivider: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 6 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-});
-
-const PREVIEW = {
-  classic: (
-    <View style={styles.previewBox}>
-      <View style={[styles.previewHeader, { backgroundColor: '#D3D3D3' }]} />
-      <View style={styles.previewLineWide} />
+const Preview = ({ id }: { id: string }) => {
+  return (
+    <View style={styles.previewCard}>
+      <View style={[styles.previewHeader, id === 'classic' ? styles.gray : id === 'modern' ? styles.blue : styles.white]} />
       <View style={styles.previewLine} />
-      <View style={styles.previewDivider} />
-      <View style={styles.previewLineWide} />
-      <View style={styles.previewLine} />
+      <View style={styles.previewParagraph} />
+      <View style={styles.previewParagraph} />
     </View>
-  ),
-  modern: (
-    <View style={styles.previewBox}>
-      <View style={[styles.previewHeader, { backgroundColor: '#111827' }]} />
-      <View style={styles.row}>
-        <View style={[styles.previewLineWide, { flex: 1 }]} />
-        <View style={{ width: 6 }} />
-        <View style={[styles.previewLine, { flex: 1 }]} />
-      </View>
-      <View style={styles.previewDivider} />
-      <View style={styles.row}>
-        <View style={[styles.previewLine, { flex: 1 }]} />
-        <View style={{ width: 6 }} />
-        <View style={[styles.previewLineWide, { flex: 1 }]} />
-      </View>
-    </View>
-  ),
-  minimal: (
-    <View style={styles.previewBox}>
-      <View style={styles.previewLineWide} />
-      <View style={styles.previewLine} />
-      <View style={styles.previewLine} />
-      <View style={styles.previewLine} />
-    </View>
-  ),
-} as const;
+  );
+};
 
 export default function TemplatePickerScreen({ onBack, onPick }: Props) {
   return (
@@ -69,13 +27,12 @@ export default function TemplatePickerScreen({ onBack, onPick }: Props) {
       <FlatList
         data={TEMPLATES}
         keyExtractor={(i) => i.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 16 }}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => onPick?.(item.id)}>
+            <Preview id={item.id} />
             <Text style={styles.cardTitle}>{item.name}</Text>
-            <View style={{ height: 8 }} />
-            {PREVIEW[item.id as keyof typeof PREVIEW]}
-            <Text style={styles.cardHint}>Toque para editar</Text>
+            <Text style={styles.cardHint}>Toque para editar nesse modelo</Text>
           </TouchableOpacity>
         )}
       />
@@ -85,3 +42,20 @@ export default function TemplatePickerScreen({ onBack, onPick }: Props) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  title: { marginTop: 16, textAlign: 'center', fontSize: 20, fontWeight: '800', color: '#111827' },
+  card: { marginHorizontal: 16, marginBottom: 12, padding: 16, backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#111827' },
+  cardHint: { marginTop: 8, color: '#6B7280' },
+  back: { position: 'absolute', left: 16, right: 16, bottom: 16, backgroundColor: '#2F80ED', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  backText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  previewCard: { height: 120, borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 10, overflow: 'hidden', backgroundColor: '#FFFFFF' },
+  previewHeader: { height: 40, backgroundColor: '#E5E7EB' },
+  previewLine: { height: 6, margin: 8, backgroundColor: '#E5E7EB', borderRadius: 3 },
+  previewParagraph: { height: 8, marginHorizontal: 8, marginBottom: 6, backgroundColor: '#F3F4F6', borderRadius: 3 },
+  gray: { backgroundColor: '#D1D5DB' },
+  blue: { backgroundColor: '#DBEAFE' },
+  white: { backgroundColor: '#F3F4F6' },
+});

@@ -19,7 +19,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
-    "react-native-view-shot": "^4.0.3",
+    "react-native-view-shot": "4.0.3",
     "react-native-web": "^0.20.0",
     "expo-file-system": "~18.1.11"
   },

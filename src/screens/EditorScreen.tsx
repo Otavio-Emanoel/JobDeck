@@ -25,6 +25,46 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
   const scrollRef = useRef<ScrollView>(null);
   const [positions, setPositions] = useState<Record<string, number>>({});
 
+  // Parser robusto para o campo location salvo em string
+  function parseLocation(loc?: string) {
+    const out = { street: '', number: '', neighborhood: '', city: '', stateUF: '', cep: '' };
+    if (!loc) return out;
+    let rest = String(loc);
+
+    // CEP
+    const cepMatch = rest.match(/(\b\d{5}-?\d{3}\b)/);
+    if (cepMatch) {
+      out.cep = cepMatch[1];
+      rest = rest.replace(cepMatch[1], '').replace(/\s+,\s+|,\s+|\s+,/g, ',');
+    }
+
+    // Cidade - UF (considera acentos e espaços)
+    const cityUfMatch = rest.match(/([A-Za-zÀ-ÿ .'-]+?)\s*-\s*([A-Za-z]{2})/);
+    if (cityUfMatch) {
+      out.city = cityUfMatch[1].trim();
+      out.stateUF = cityUfMatch[2].toUpperCase();
+      rest = rest.replace(cityUfMatch[0], '').replace(/\s+,\s+|,\s+|\s+,/g, ',');
+    }
+
+    // Sobrou: rua, numero, bairro (em alguma ordem separada por vírgula)
+    const parts = rest.split(',').map(s => s.trim()).filter(Boolean);
+    if (parts.length) {
+      // Detecta número puro como segunda parte
+      if (parts.length >= 2 && /^\d{1,6}$/.test(parts[1])) {
+        out.street = parts[0];
+        out.number = parts[1];
+        out.neighborhood = parts[2] || '';
+      } else {
+        // Tenta "Rua X 123"
+        const m = parts[0].match(/^(.*?)(?:\s+(\d{1,6}))?$/);
+        out.street = (m?.[1] || parts[0]).trim();
+        if (m?.[2]) out.number = m[2];
+        out.neighborhood = parts[1] || '';
+      }
+    }
+    return out;
+  }
+
   useEffect(() => {
     if (!editingId) return;
     getResume(editingId).then((item: any) => {
@@ -36,14 +76,15 @@ export default function EditorScreen({ onDone, onViewSaved, editingId, onBack }:
       const dobTxt = sum.includes('Nascimento:') ? sum.replace('Nascimento:', '').trim() : '';
       setDob(dobTxt);
       setLanguages((r.languages || []).join(', '));
-      const loc = r.personal.location || '';
-      const parts = loc.split(',').map(s => s.trim());
-      setStreet(parts[0]?.split(' ')[0] ? parts[0] : '');
-      setNeighborhood(parts[1] || '');
-      const cityUF = parts[2] || '';
-      setCity(cityUF.split(' - ')[0] || '');
-      setStateUF(cityUF.split(' - ')[1] || '');
-      setCep(parts[3] || '');
+
+      const parsed = parseLocation(r.personal.location);
+      setStreet(parsed.street);
+      setNumber(parsed.number);
+      setNeighborhood(parsed.neighborhood);
+      setCity(parsed.city);
+      setStateUF(parsed.stateUF);
+      setCep(parsed.cep);
+
       setEducation(r.education?.[0]?.institution || '');
       setExperience(r.experiences?.[0]?.company || '');
     });
