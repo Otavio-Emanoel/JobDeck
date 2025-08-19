@@ -8,11 +8,13 @@ import SavedResumesScreen from './src/screens/SavedResumesScreen';
 import PreviewScreen from './src/screens/PreviewScreen';
 import TemplatePickerScreen from './src/screens/TemplatePickerScreen';
 import TemplateEditorScreen from './src/screens/TemplateEditorScreen';
+import PortfolioEditorScreen from './src/screens/PortfolioEditorScreen';
+import PortfolioPreviewScreen from './src/screens/PortfolioPreviewScreen';
 import { ResumeProvider } from './src/contexts/ResumeProvider';
 import { getResume, getTemplateDoc } from './src/services/storage';
 import type { TemplateDoc } from './src/types/template';
 
-type Route = 'home' | 'editor' | 'saved' | 'preview' | 'edit' | 'templates' | 'template-editor';
+type Route = 'home' | 'editor' | 'saved' | 'preview' | 'edit' | 'templates' | 'template-editor' | 'portfolio-editor' | 'portfolio-preview';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -21,6 +23,7 @@ export default function App() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateEditingId, setTemplateEditingId] = useState<string | null>(null);
   const [templateInitialDoc, setTemplateInitialDoc] = useState<TemplateDoc | null>(null);
+  const [portfolioHtml, setPortfolioHtml] = useState<string>('');
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1500);
@@ -50,7 +53,12 @@ export default function App() {
         {isLoading ? (
           <SplashScreen />
         ) : route === 'home' ? (
-          <HomeScreen onNewResume={() => setRoute('editor')} onViewSaved={() => setRoute('saved')} onPickTemplate={() => setRoute('templates')} />
+          <HomeScreen
+            onNewResume={() => setRoute('editor')}
+            onViewSaved={() => setRoute('saved')}
+            onPickTemplate={() => setRoute('templates')}
+            onCreatePortfolio={() => setRoute('portfolio-editor')}
+          />
         ) : route === 'editor' ? (
           <EditorScreen onDone={() => setRoute('home')} onViewSaved={() => setRoute('saved')} onBack={() => setRoute('home')} />
         ) : route === 'saved' ? (
@@ -84,6 +92,13 @@ export default function App() {
               setRoute('saved');
             }}
           />
+        ) : route === 'portfolio-editor' ? (
+          <PortfolioEditorScreen
+            onBack={() => setRoute('home')}
+            onPreview={(html) => { setPortfolioHtml(html); setRoute('portfolio-preview'); }}
+          />
+        ) : route === 'portfolio-preview' ? (
+          <PortfolioPreviewScreen html={portfolioHtml} onBack={() => setRoute('portfolio-editor')} />
         ) : (
           <HomeScreen onNewResume={() => setRoute('editor')} onViewSaved={() => setRoute('saved')} onPickTemplate={() => setRoute('templates')} />
         )}

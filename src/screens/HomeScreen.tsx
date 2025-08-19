@@ -1,13 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-export default function HomeScreen({ onNewResume, onViewSaved, onPickTemplate }: { onNewResume?: () => void; onViewSaved?: () => void; onPickTemplate?: () => void }) {
+export default function HomeScreen({ onNewResume, onViewSaved, onPickTemplate, onCreatePortfolio }: { onNewResume?: () => void; onViewSaved?: () => void; onPickTemplate?: () => void; onCreatePortfolio?: () => void }) {
   return (
     <View style={styles.container}>
       <Image source={require('../assets/icon.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>JobDeck</Text>
       <Text style={styles.subtitle}>Crie, edite e exporte seu currículo</Text>
       <View style={styles.actions}>
+        <TouchableOpacity style={styles.buttonCool} activeOpacity={0.9} onPress={onCreatePortfolio}>
+          <Text style={styles.primaryButtonText}>Criar Portifólio</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.primaryButton} activeOpacity={0.9} onPress={onNewResume}>
           <Text style={styles.primaryButtonText}>Novo currículo</Text>
         </TouchableOpacity>
@@ -84,4 +87,13 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     textDecorationLine: 'underline' 
   },
+  buttonCool: {
+    backgroundColor: '#000266ff',
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginBottom: 12,
+  }
 });
